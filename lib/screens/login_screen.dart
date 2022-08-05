@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_4/components/rounded_button.dart';
 import 'package:flutter_application_4/constants.dart';
+import 'chat_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   static String id = 'Login';
@@ -9,6 +11,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  String Email = '';
+  String Password = '';
+  final _cloud = FirebaseAuth.instance;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,8 +36,9 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 48.0,
             ),
             TextField(
+              textAlign: TextAlign.center,
               onChanged: (value) {
-                //Do something with the user input.
+                Email = value;
               },
               decoration: kInputDecoration.copyWith(
                 hintText: 'Enter your Email ID:',
@@ -41,8 +48,10 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 8.0,
             ),
             TextField(
+              textAlign: TextAlign.center,
+              obscureText: true,
               onChanged: (value) {
-                //Do something with the user input.
+                Password = value;
               },
               decoration: kInputDecoration.copyWith(
                 hintText: 'Enter your Password:',
@@ -52,9 +61,14 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 24.0,
             ),
             RoundedButton(
-                colour: Colors.lightBlueAccent,
-                title: 'Log In',
-                onPressed: () {})
+              colour: Colors.lightBlueAccent,
+              title: 'Log In',
+              onPressed: () {
+                _cloud.signInWithEmailAndPassword(
+                    email: Email, password: Password);
+                Navigator.pushNamed(context, ChatScreen.id);
+              },
+            )
           ],
         ),
       ),
