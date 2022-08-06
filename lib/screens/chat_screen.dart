@@ -47,6 +47,29 @@ class _ChatScreenState extends State<ChatScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            StreamBuilder<QuerySnapshot>(
+              stream: cloud.collection('Messages').snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                        backgroundColor: Colors.lightBlueAccent),
+                  );
+                }
+                final Messages = snapshot.data!.docs;
+                List<Text> MessageWidgets = [];
+                for (var Message in Messages) {
+                  final messagetext = Message.get('Message');
+                  final messagesender = Message.get('UserID');
+                  final messageWidget =
+                      Text('$messagesender said $messagetext');
+                  MessageWidgets.add(messageWidget);
+                }
+                return Column(
+                  children: MessageWidgets,
+                );
+              },
+            ),
             Container(
               decoration: kMessageContainerDecoration,
               child: Row(
@@ -62,7 +85,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      //Implement send functionality.
                       cloud.collection('Messages').add(
                         {
                           'Message': MessageText,
