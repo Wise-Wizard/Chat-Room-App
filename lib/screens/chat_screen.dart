@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_4/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatScreen extends StatefulWidget {
   static String id = 'Chat';
@@ -23,6 +24,8 @@ class _ChatScreenState extends State<ChatScreen> {
     getCurrentUser();
   }
 
+  String MessageText = '';
+  final cloud = FirebaseFirestore.instance;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,7 +55,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Expanded(
                     child: TextField(
                       onChanged: (value) {
-                        //Do something with the user input.
+                        MessageText = value;
                       },
                       decoration: kMessageTextFieldDecoration,
                     ),
@@ -60,6 +63,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   ElevatedButton(
                     onPressed: () {
                       //Implement send functionality.
+                      cloud.collection('Messages').add(
+                        {
+                          'Message': MessageText,
+                          'UserID': LoggedInUser.email,
+                        },
+                      );
                     },
                     child: Text(
                       'Send',
