@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_4/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_application_4/components/message_bubble.dart';
 
 class ChatScreen extends StatefulWidget {
   static String id = 'Chat';
@@ -9,9 +10,14 @@ class ChatScreen extends StatefulWidget {
   _ChatScreenState createState() => _ChatScreenState();
 }
 
+String MessageText = '';
+final cloud = FirebaseFirestore.instance;
+User? LoggedInUser;
+
 class _ChatScreenState extends State<ChatScreen> {
   final _auth = FirebaseAuth.instance;
-  late User LoggedInUser;
+  final MessageController = TextEditingController();
+
   void getCurrentUser() async {
     final user = await _auth.currentUser;
     if (user != null) {
@@ -24,8 +30,6 @@ class _ChatScreenState extends State<ChatScreen> {
     getCurrentUser();
   }
 
-  String MessageText = '';
-  final cloud = FirebaseFirestore.instance;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,29 +51,7 @@ class _ChatScreenState extends State<ChatScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            StreamBuilder<QuerySnapshot>(
-              stream: cloud.collection('Messages').snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                        backgroundColor: Colors.lightBlueAccent),
-                  );
-                }
-                final Messages = snapshot.data!.docs;
-                List<Text> MessageWidgets = [];
-                for (var Message in Messages) {
-                  final messagetext = Message.get('Message');
-                  final messagesender = Message.get('UserID');
-                  final messageWidget =
-                      Text('$messagesender said $messagetext');
-                  MessageWidgets.add(messageWidget);
-                }
-                return Column(
-                  children: MessageWidgets,
-                );
-              },
-            ),
+            MessagesStream(cloud: cloud),
             Container(
               decoration: kMessageContainerDecoration,
               child: Row(
@@ -77,6 +59,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: <Widget>[
                   Expanded(
                     child: TextField(
+                      controller: MessageController,
                       onChanged: (value) {
                         MessageText = value;
                       },
@@ -88,9 +71,10 @@ class _ChatScreenState extends State<ChatScreen> {
                       cloud.collection('Messages').add(
                         {
                           'Message': MessageText,
-                          'UserID': LoggedInUser.email,
+                          'UserID': LoggedInUser?.email,
                         },
                       );
+                      MessageController.clear();
                     },
                     child: Text(
                       'Send',
@@ -103,6 +87,46 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class MessagesStream extends StatelessWidget {
+  MessagesStream({required this.cloud});
+  final FirebaseFirestore cloud;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: cloud.collection('Messages').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(
+            child: CircularProgressIndicator(
+                backgroundColor: Colors.lightBlueAccent),
+          );
+        }
+        final Messages = snapshot.data!.docs.reversed;
+        List<MessageBubble> MessageWidgets = [];
+        for (var Message in Messages) {
+          final messagetext = Message.get('Message');
+          final messagesender = Message.get('UserID');
+          final currentuser = LoggedInUser?.email;
+          MessageBubble TextBubble = MessageBubble(
+              sender: messagesender,
+              text: messagetext,
+              isMe: currentuser == messagesender);
+          final messageWidget = TextBubble;
+          MessageWidgets.add(messageWidget);
+        }
+        return Expanded(
+          child: ListView(
+            reverse: false,
+            padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+            children: MessageWidgets,
+          ),
+        );
+      },
     );
   }
 }
