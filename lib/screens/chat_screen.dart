@@ -13,6 +13,7 @@ class ChatScreen extends StatefulWidget {
 String MessageText = '';
 final cloud = FirebaseFirestore.instance;
 User? LoggedInUser;
+var TimeStamp = null;
 
 class _ChatScreenState extends State<ChatScreen> {
   final _auth = FirebaseAuth.instance;
@@ -72,8 +73,10 @@ class _ChatScreenState extends State<ChatScreen> {
                         {
                           'Message': MessageText,
                           'UserID': LoggedInUser?.email,
+                          'TimeStamp': FieldValue.serverTimestamp(),
                         },
                       );
+
                       MessageController.clear();
                     },
                     child: Text(
@@ -98,7 +101,7 @@ class MessagesStream extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-      stream: cloud.collection('Messages').snapshots(),
+      stream: cloud.collection('Messages').orderBy('TimeStamp').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Center(
@@ -121,7 +124,7 @@ class MessagesStream extends StatelessWidget {
         }
         return Expanded(
           child: ListView(
-            reverse: false,
+            reverse: true,
             padding: EdgeInsets.symmetric(vertical: 20, horizontal: 10),
             children: MessageWidgets,
           ),
